@@ -17,7 +17,7 @@ ADR 是一份“为什么当时这样选”的记录。本项目把它用于产�
 | [0005](0005-github-pages-mock.md) | 当前 Mock 如何发布给朋友体验 | 已接受 | GitHub Pages 已发布 |
 | [0006](0006-ambient-memory-shuffle.md) | 如何产生相册式的记忆浮现感 | 已接受 | 已上线；初版速度参数由 ADR-0007 替代 |
 | [0007](0007-relaxed-motion-timing.md) | 如何让切换更松弛且操作及时 | 已接受 | 已上线；用户长期感受待观察 |
-| [0008](0008-browse-and-retrieval.md) | 如何兼顾随便看和有目标地找 | 提案 | 搜索与查看全部未实现 |
+| [0008](0008-browse-and-retrieval.md) | 如何兼顾随便看和有目标地找 | 提案 | 已追加 Mock 优先级判断及验证场景；搜索与查看全部未实现 |
 | [0009](0009-low-friction-capture.md) | 如何让真实分享低成本进入并留存 | 提案 | 未实现；平台输入能力待实测 |
 | [0010](0010-single-person-start-shared-space.md) | 是否允许一人先开始、朋友后来加入 | 提案 | 未实现；访问及邀请方案待决策 |
 | [0011](0011-first-market-and-validation.md) | 首发用户是谁，竞争优势如何验证 | 提案 | 未招募、未试验、无留存结论 |
