@@ -169,7 +169,7 @@
     oldIdentity.replaceWith(spaceTrigger);
     spaceTrigger.querySelector(".pso-title").textContent = "一起留着";
     const headerActions = node("div", "vibe-header-actions");
-    const addTrigger = button("收一条", "vibe-add-trigger", () => {
+    const addTrigger = button("如何收下", "vibe-add-trigger", () => {
       if (state.role === "guest") openInvitation();
       else openCapture();
     });
@@ -181,10 +181,10 @@
     const emptyArt = node("div", "vibe-empty-art");
     emptyArt.setAttribute("aria-hidden", "true");
     emptyArt.append(node("span", "vibe-empty-paper", "↗"), node("span", "vibe-empty-paper", "留着"));
-    const emptyTitle = node("h2", "", "先留下一条分享");
-    const emptyCopy = node("p", "", "一条分享，就能开始这本相册。\n等朋友来了，再一起添。 ");
+    const emptyTitle = node("h2", "", "从一次分享开始");
+    const emptyCopy = node("p", "", "在小红书或抖音看到好东西，\n从分享入口送进这本相册。");
     const emptyActions = node("div", "vibe-empty-actions");
-    const emptyAdd = button("收下第一条", "vibe-primary", () => state.role === "guest" ? openInvitation() : openCapture());
+    const emptyAdd = button("了解如何分享", "vibe-primary", () => state.role === "guest" ? openInvitation() : openCapture());
     emptyActions.append(emptyAdd, button("先看看示例相册", "vibe-text-button", () => switchWorkspace("sample")));
     empty.append(emptyArt, emptyTitle, emptyCopy, emptyActions);
     root.querySelector(".pso-world").append(empty);
@@ -307,11 +307,11 @@
       const identity = state.role === "owner" ? (state.workspace === "sample" ? "OUR INTERNET · 示例相册" : "OUR INTERNET · 你的相册") :
         state.role === "guest" ? "朋友预览 · 只读" : "小禾 · 成员演示";
       spaceTrigger.querySelector(".pso-kicker").textContent = identity;
-      addTrigger.textContent = state.role === "guest" ? "加入" : "收一条";
-      addTrigger.setAttribute("aria-label", state.role === "guest" ? "加入这个演示相册" : "收下一条分享");
-      emptyAdd.textContent = state.role === "guest" ? "加入，一起留下第一条" : "收下第一条";
-      emptyTitle.textContent = state.role === "guest" ? "这本相册，等你们一起添" : "先留下一条分享";
-      emptyCopy.textContent = state.role === "guest" ? "先看看也没关系。加入后，可以带来自己的分享。" : "一条分享，就能开始这本相册。\n等朋友来了，再一起添。";
+      addTrigger.textContent = state.role === "guest" ? "加入" : "如何收下";
+      addTrigger.setAttribute("aria-label", state.role === "guest" ? "加入这个演示相册" : "如何从原平台收下分享");
+      emptyAdd.textContent = state.role === "guest" ? "加入，一起留下第一条" : "了解如何分享";
+      emptyTitle.textContent = state.role === "guest" ? "这本相册，等你们一起添" : "从一次分享开始";
+      emptyCopy.textContent = state.role === "guest" ? "先看看也没关系。加入后，可以带来自己的分享。" : "在小红书或抖音看到好东西，\n从分享入口送进这本相册。";
       empty.hidden = items().length > 0;
       demoText.textContent = storageIssue || `仅本机演示 · ${state.workspace === "sample" ? "示例相册" : "自己的相册"} · 未接入平台解析或云同步`;
       demoControls.classList.toggle("has-storage-issue", !!storageIssue);
@@ -359,43 +359,41 @@
       } catch (err) { showToast(err.message); return false; }
     }
 
-    function extractShare(raw, customTitle, partial) {
-      const match = raw.match(/https?:\/\/[^\s<>"'「」『』【】（）]+/i);
-      // Preserve ASCII query/hash punctuation: it may identify a different resource.
-      const candidate = match?.[0].replace(/[，。；！？，、]+$/, "");
-      const url = candidate && safeUrl(candidate);
-      if (!url) return null;
-      const fixture = seeds.find((item) => noteId(item.url) && noteId(item.url) === noteId(url.href));
-      let sharedTitle = raw.slice(0, match.index).trim();
-      sharedTitle = sharedTitle.replace(/^\d+\s*/, "").replace(/^【/, "").replace(/\s*[-|]\s*[^|]*\|\s*小红书[\s\S]*$/, "").replace(/[【】]/g, "").trim();
-      if (sharedTitle.length > 180) sharedTitle = sharedTitle.slice(0, 180);
-      const title = customTitle.trim() || (!partial && fixture?.title) || sharedTitle || "一条待补充的分享";
-      return { url: url.href, fixture: !partial ? fixture : null, title, sharedTitle, customTitle: customTitle.trim(), raw, partial };
+    function sourcePayload(platform) {
+      if (platform === "抖音") {
+        const url = new URL(location.pathname, location.origin);
+        url.searchParams.set("demo", "source-douyin");
+        return { platform, title: "一条抖音分享 · 流程演示", url: url.href, fixture: null,
+          isFlowDemo: true, demoSourceId: "douyin-incoming-demo-v1",
+          text: "这是用于演示原平台分享入口的合成资料，不对应真实抖音作品。" };
+      }
+      const fixture = seeds.find((item) => item.id === 8) || seeds[0];
+      return { platform: "小红书", title: fixture.title, url: fixture.url, fixture,
+        isFlowDemo: false, text: `${fixture.title}\n${fixture.url}` };
     }
 
-    function buildCapturedItem(parsed) {
+    function buildCapturedItem(payload, partial) {
       const now = new Date();
-      const known = parsed.fixture;
-      const userTitle = !!parsed.customTitle;
+      const known = partial ? null : payload.fixture;
       const id = Math.max(Date.now(), ...items().map((item) => item.id + 1));
       const item = {
-        id, title: parsed.title, short: parsed.title.slice(0, 14),
-        author: known?.author || "原作者待补", date: localDate(now), addedAt: now.toISOString(),
+        id, title: payload.title, short: payload.isFlowDemo ? "抖音分享 · 演示" : payload.title.slice(0, 14),
+        author: payload.isFlowDemo ? "流程演示资料" : known?.author || "原作者待补", date: localDate(now), addedAt: now.toISOString(),
         sharer: actorLabel(), person: actorId(), createdBy: actorId(),
         cover: known?.cover || null,
         place: known?.place || "unknown", types: known ? [...known.types] : ["unknown"],
-        url: parsed.url,
-        platform: noteId(parsed.url) || /(^|\.)xhslink\.(com|cn)$/.test(safeUrl(parsed.url).hostname) ? "小红书" : safeUrl(parsed.url).hostname,
+        url: payload.url, platform: payload.platform,
+        isFlowDemo: payload.isFlowDemo, demoSourceId: payload.demoSourceId || null,
         context: {
-          place: known ? known.context.place : "地点尚未取得，可以在内容背面补充",
-          type: known ? known.context.type : "类型尚未确认，可以稍后更正",
-          person: `${actorLabel()}于${localDate(now)}收进本机演示相册`
+          place: known ? known.context.place : "地点信息待取得",
+          type: known ? known.context.type : "内容类型待确认",
+          person: `${actorLabel()}于${localDate(now)}从${payload.platform}分享收下（演示）`
         },
         provenance: {
-          kind: known ? "fixture" : (parsed.partial ? "partial-demo" : "pasted-share"),
-          titleSource: userTitle ? "你填写的标题" : known ? "示例资料，未联网解析" : parsed.sharedTitle ? "粘贴的分享文字" : "暂用占位标题",
-          originalTitle: known?.title || parsed.sharedTitle || "未取得作品原标题",
-          sharedText: parsed.raw
+          kind: payload.isFlowDemo ? "source-share-demo" : known ? "fixture" : "shared-payload-partial-demo",
+          sourcePlatform: payload.platform,
+          titleSource: payload.isFlowDemo ? "分享流程示意，非真实作品资料" : "示例分享载荷，未联网解析",
+          originalTitle: payload.title, sharedText: payload.text
         }
       };
       if (known?.placeLabel) item.placeLabel = known.placeLabel;
@@ -404,98 +402,113 @@
 
     function openCapture() {
       if (!canAdd()) { openInvitation(); return; }
-      if (!captureDraft) captureDraft = { raw: "", title: "", parsed: null, failConsumed: false };
-      const draft = captureDraft;
-      const { body, footer } = sheet("收下一条", "好东西，先留着", "capture");
-      body.append(note("把朋友发来的分享文字，或原内容链接放进来。 "));
-      const raw = node("textarea");
-      raw.rows = 5;
-      raw.maxLength = 12000;
-      raw.placeholder = "例如：金华的潜水秘境…… https://…";
-      raw.value = draft.raw;
-      raw.addEventListener("input", () => { draft.raw = raw.value; draft.parsed = null; });
-      const title = textInput(draft.title, "只有链接也可以先收下");
-      title.maxLength = 180;
-      title.addEventListener("input", () => { draft.title = title.value; draft.parsed = null; });
-      body.append(field("分享文字或链接", raw), field("起个认得出的标题（选填）", title));
-      const sample = button("试一条示例：金华潜水 ↗", "vibe-text-button", () => {
-        const fixture = seeds.find((item) => item.id === 8) || seeds[0];
-        draft.raw = `${fixture.title}\n${fixture.url}`;
-        draft.title = "";
-        draft.parsed = null;
-        raw.value = draft.raw;
-        title.value = "";
-        raw.focus();
+      const { body, footer } = sheet("看到好东西，直接分享", "如何收下", "share-guide");
+      const steps = node("ol", "vibe-share-guide");
+      steps.append(node("li", "", "在小红书或抖音打开分享入口"), node("li", "", "通过可用的系统分享入口选择 Vibe"), node("li", "", "收下后，继续在原平台浏览"));
+      body.append(steps, note("内容由分享入口传来，不需要来 Vibe 粘贴，也不需要先填标题。接收后会给出保存结果。"));
+      body.append(note("当前网页仅演示这条路径。真实 iPhone 分享扩展尚未接入，两平台的具体入口及可提供的资料待真机确认。"));
+      receiverDestination(body);
+      body.append(note("想试这条路径，可以从手机框下方的“体验场景”进入分享演示。"));
+      footer.append(button("知道了", "vibe-primary", closeSheet));
+    }
+
+    function receiverDestination(body) {
+      const destination = node("div", "vibe-share-destination");
+      destination.append(node("span", "", "接收相册 · " + (state.workspace === "sample" ? "示例相册" : "自己的相册")));
+      if (state.role === "owner") destination.append(button("更换", "vibe-text-button", () => {
+        const { body: targetBody, footer } = sheet("收进哪一本？", "演示接收设置", "share-destination");
+        targetBody.append(note("本轮是两套独立的本机演示资料。相册由你明确选择，不会自动切换。"));
+        const status = statusNode(); targetBody.append(status);
+        ["sample", "own"].forEach((workspace) => footer.append(button(workspace === "sample" ? "示例相册" : "自己的相册", "vibe-secondary", () => {
+          try { const next = clone(state); next.workspace = workspace; commit(next, { resetView: true }); openCapture(); }
+          catch (err) { error(status, err.message); }
+        })));
+      }));
+      body.append(destination);
+    }
+
+    function openSourceDemo(platform, receipt = null) {
+      const payload = sourcePayload(platform);
+      const { body, footer } = sheet(platform + "里的这一刻", platform + " · 发起端流程示意", "source-app");
+      const hero = node("div", "vibe-source-hero");
+      if (payload.fixture?.cover) { const image = node("img"); image.src = payload.fixture.cover; image.alt = "已公开示例的封面"; hero.append(image); }
+      else hero.append(node("span", "vibe-source-placeholder", "视频分享\n流程示意"));
+      hero.append(node("strong", "", payload.title));
+      body.append(hero, note(payload.isFlowDemo ? "这是用于说明接收过程的合成资料，不对应真实抖音作品。" : "使用已公开的金华潜水示例，资料预置、未实时读取小红书。"));
+      if (receipt) {
+        const result = node("div", "vibe-share-receipt");
+        result.setAttribute("role", "status");
+        result.append(node("strong", "", receipt.duplicate ? "这条已经收过了" : receipt.partial ? "分享已保存，资料待补齐" : "已收进 Vibe"), note("已经回到原来的浏览位置（演示）。"));
+        body.prepend(result);
+        footer.append(button("在 Vibe 查看", "vibe-secondary", () => { closeSheet(); api.focusItem(receipt.id); }), button("继续浏览" + platform, "vibe-primary", () => openSourceDemo(platform)));
+      } else {
+        body.append(note("这里展示发起分享的动作，不是原 App 的真实页面或菜单截图。"));
+        const existing = payload.demoSourceId ? items().find((item) => item.demoSourceId === payload.demoSourceId) : duplicate(payload.url);
+        if (existing) body.append(note("这条已在当前相册，可体验再次分享时的反馈。模拟新增可在“如何收下”里明确更换接收相册。"));
+        footer.append(button("结束演示", "vibe-secondary", closeSheet), button("分享（演示）", "vibe-primary", () => openShareTargets(platform)));
+      }
+    }
+
+    function openShareTargets(platform) {
+      const { body, footer } = sheet("分享给…", platform + " · 分享目标示意", "share-targets");
+      body.append(note("原平台通过可用的系统分享入口，把这条内容交给你选择的应用。具体入口位置与支持情况待真机确认。"));
+      if (captureScenario === "unavailable") {
+        body.append(note("当前场景：原平台没有提供可用的系统分享入口（演示）。尚未向 Vibe 交付内容，也没有保存记录。"));
+        footer.append(button("继续浏览" + platform, "vibe-primary", () => openSourceDemo(platform)));
+        return;
+      }
+      body.append(node("p", "vibe-note", "接收相册：" + (state.workspace === "sample" ? "示例相册" : "自己的相册")));
+      const target = button("", "vibe-share-app-target", () => {
+        if (!canAdd()) { openInvitation(); return; }
+        captureDraft = { payload: sourcePayload(platform), failConsumed: false };
+        receiveIncomingShare();
       });
-      body.append(sample, note("这是前端体验：只读取粘贴的文字；已知示例可展示预置资料，不会联网解析作品。"));
-      if (captureScenario !== "normal") body.append(note(captureScenario === "partial" ? "当前体验场景：信息提取不全，仍可收下链接。" : "当前体验场景：下一次保存失败，可重试。"));
-      const status = statusNode();
-      body.append(status);
-      footer.append(button("先放一会儿", "vibe-secondary", closeSheet), button("看看这条", "vibe-primary", () => {
-        if (!canAdd()) { error(status, "当前是只读预览，加入后才能收下分享。 "); return; }
-        const parsed = extractShare(draft.raw, draft.title, captureScenario === "partial");
-        if (!parsed) { error(status, "还没找到有效的网页链接。请粘贴以 https:// 或 http:// 开头的分享链接。 "); raw.focus(); return; }
-        draft.parsed = parsed;
-        const existing = duplicate(parsed.url);
-        if (existing) openDuplicate(existing.id);
-        else openCapturePreview();
-      }));
-      setTimeout(() => { if (currentScreen === "capture") raw.focus({ preventScroll: true }); }, 90);
+      target.setAttribute("aria-label", "分享给 Vibe（演示）");
+      target.append(node("span", "vibe-share-app-icon", "V"), node("strong", "", "Vibe"), node("span", "", "收进相册"));
+      body.append(target);
+      footer.append(button("返回" + platform, "vibe-secondary", () => openSourceDemo(platform)));
     }
 
-    function openDuplicate(id) {
-      const item = itemById(id);
-      if (!item) { openCapture(); return; }
-      const { body, footer } = sheet("这条已经留着了", "没有重复添一张", "duplicate");
-      body.append(preview(item), note("已找到相同作品地址或同一条小红书笔记。原来的内容还在，未新增记录。 "));
-      footer.append(button("换一条", "vibe-secondary", openCapture), button("看看已有内容", "vibe-primary", () => {
-        closeSheet();
-        api.focusItem(id);
-      }));
-    }
-
-    function openCapturePreview() {
+    async function receiveIncomingShare() {
+      if (busy || !captureDraft?.payload) return;
       const draft = captureDraft;
-      if (!draft?.parsed) { openCapture(); return; }
-      const parsed = draft.parsed;
-      const { body, footer } = sheet(parsed.fixture ? "这一条，留进相册" : "先把线索留住", "收下一条", "capture-preview");
-      const previewItem = buildCapturedItem(parsed);
-      body.append(preview(previewItem));
-      body.append(note(parsed.fixture ? "封面、作者和分类来自示例资料，未联网解析；带入人和时间按这次操作记录。" : "链接和你粘贴的文字会保存。封面、原作者、地点尚未取得，之后可以补标题和分类。"));
-      const status = statusNode();
-      body.append(status);
-      footer.append(button("回去改改", "vibe-secondary", openCapture), button("收进相册", "vibe-primary", async () => {
-        if (busy) return;
-        if (!canAdd()) { error(status, "当前是只读预览，加入后才能收下分享。 "); return; }
-        const existing = duplicate(parsed.url);
-        if (existing) { openDuplicate(existing.id); return; }
-        setBusy(true);
-        status.hidden = false;
-        status.className = "vibe-status";
-        status.dataset.state = "loading";
-        status.textContent = "正在收进这本相册……";
-        await new Promise((resolve) => setTimeout(resolve, 650));
-        try {
-          if (captureScenario === "failure" && !draft.failConsumed) {
-            draft.failConsumed = true;
-            captureScenario = "normal";
-            throw new Error("这次没有保存（失败演示）。输入都还在，再试一次就可以。 ");
-          }
-          if (!canAdd()) throw new Error("当前身份不能添加内容，输入仍然保留。 ");
-          const added = buildCapturedItem(parsed);
-          const next = clone(state);
-          next.libraries[state.workspace].push(added);
-          commit(next, { preferredId: added.id });
-          captureDraft = null;
-          setBusy(false);
-          closeSheet();
-          api.focusItem(added.id);
-          showToast("已收下。相册、分类和查找里，都能找到它。 ");
-        } catch (err) {
-          setBusy(false);
-          error(status, err.message);
+      const payload = draft.payload;
+      const partial = captureScenario === "partial";
+      const { body, footer } = sheet("Vibe 接到分享了", "来自" + payload.platform + " · 接收端演示", "share-receive");
+      body.append(preview(buildCapturedItem(payload, partial)), note("收进：" + (state.workspace === "sample" ? "示例相册" : "自己的相册")));
+      body.append(note("不需要粘贴或填标题。以下接收与处理是网页演示，真实分享扩展尚未接入。"));
+      const status = statusNode(); body.append(status);
+      const retry = button("重试保存", "vibe-primary", receiveIncomingShare);
+      retry.hidden = true;
+      footer.append(button("返回" + payload.platform, "vibe-secondary", () => openSourceDemo(payload.platform)), retry);
+      status.hidden = false;
+      status.dataset.state = "loading";
+      status.textContent = "正在保留收到的分享……";
+      setBusy(true);
+      await new Promise((resolve) => setTimeout(resolve, 650));
+      try {
+        if (!canAdd()) throw new Error("当前相册为只读，分享尚未保存。加入后才能收下。");
+        if (storageIssue) throw new Error(storageIssue + " 分享资料仍保留在本次演示中。");
+        const existing = payload.demoSourceId ? items().find((item) => item.demoSourceId === payload.demoSourceId) || duplicate(payload.url) : duplicate(payload.url);
+        if (existing) {
+          setBusy(false); captureDraft = null;
+          openSourceDemo(payload.platform, { id: existing.id, duplicate: true });
+          return;
         }
-      }));
+        if (captureScenario === "failure" && !draft.failConsumed) {
+          draft.failConsumed = true; captureScenario = "normal";
+          throw new Error("这次没有保存成功（失败演示）。收到的分享还在，可以直接重试。");
+        }
+        const added = buildCapturedItem(payload, partial);
+        const next = clone(state);
+        next.libraries[state.workspace].push(added);
+        commit(next, { preferredId: added.id });
+        setBusy(false); captureDraft = null;
+        openSourceDemo(payload.platform, { id: added.id, partial });
+      } catch (err) {
+        setBusy(false); retry.hidden = false;
+        error(status, err.message);
+      }
     }
 
     function detailLine(list, label, value) {
@@ -518,6 +531,7 @@
       if (item.provenance?.originalTitle && item.provenance.originalTitle !== item.title) detailLine(list, "原始标题", item.provenance.originalTitle);
       body.append(list);
       if (item.provenance?.kind === "fixture") body.append(note("这条使用了预置的示例资料，并非本次联网解析结果。"));
+      if (item.isFlowDemo) body.append(note("这是抖音分享接收流程的合成演示记录，没有对应真实作品。标题更正也不会移除它的演示标识。"));
       if (canEdit(item)) {
         footer.append(button("移出相册", "vibe-danger", () => confirmRemove(id)), button("更正信息", "vibe-primary", () => openEdit(id)));
       } else {
@@ -666,12 +680,12 @@
       const item = itemById(id);
       if (!item) return;
       const { body, footer } = sheet("线索还在这里", "原内容暂时打不开时", "recovery");
-      body.append(preview(item), note("跳转可能受登录、网络或平台限制影响，目前没有判定作品已删除。可以再试原链接，也可以复制标题回原平台查找。"));
+      body.append(preview(item), note(item.isFlowDemo ? "这条记录只有分享流程示意，没有对应的原平台作品。下面可以重新打开本站演示。" : "跳转可能受登录、网络或平台限制影响，目前没有判定作品已删除。可以再试原链接，也可以复制标题回原平台查找。"));
       const status = statusNode();
       const actions = node("div", "vibe-row");
-      actions.append(button("复制原链接", "vibe-secondary", () => copyText(item.url, status, "原链接")), button("复制标题", "vibe-secondary", () => copyText(item.title, status, "标题")));
+      actions.append(button(item.isFlowDemo ? "复制演示地址" : "复制原链接", "vibe-secondary", () => copyText(item.url, status, item.isFlowDemo ? "演示地址" : "原链接")), button(item.isFlowDemo ? "复制演示标题" : "复制标题", "vibe-secondary", () => copyText(item.title, status, item.isFlowDemo ? "演示标题" : "标题")));
       body.append(actions, status);
-      const link = node("a", "vibe-primary", "再试一次原链接 ↗");
+      const link = node("a", "vibe-primary", item.isFlowDemo ? "重新查看分享演示 ↗" : "再试一次原链接 ↗");
       link.href = safeUrl(item.url)?.href || "#";
       link.target = "_blank";
       link.rel = "noopener noreferrer";
@@ -822,16 +836,20 @@
       const workspaceRow = node("div", "vibe-row");
       workspaceRow.append(button(`示例相册 · ${state.libraries.sample.length}条`, "vibe-secondary", () => switchWorkspace("sample")), button(state.libraries.own.length ? `自己的相册 · ${state.libraries.own.length}条` : "从空相册开始", "vibe-secondary", () => switchWorkspace("own")));
       body.append(workspaceRow);
+      const sources = node("div", "vibe-row");
+      sources.append(button("从小红书分享（演示）", "vibe-secondary", () => openSourceDemo("小红书")), button("从抖音分享（演示）", "vibe-secondary", () => openSourceDemo("抖音")));
+      body.append(sources);
       const scenario = node("select");
-      [["normal", "正常保存"], ["partial", "信息提取不全"], ["failure", "下一次保存失败"]].forEach(([value, label]) => {
+      [["normal", "正常接收"], ["partial", "收到分享，资料不全"], ["failure", "下一次保存失败"], ["unavailable", "原平台未开放分享入口"]].forEach(([value, label]) => {
         const option = node("option", "", label); option.value = value; scenario.append(option);
       });
       scenario.value = captureScenario;
       scenario.addEventListener("change", () => {
         captureScenario = scenario.value;
-        if (captureDraft) { captureDraft.parsed = null; captureDraft.failConsumed = false; }
+        captureDraft = null;
       });
-      body.append(field("下一条分享的保存场景", scenario));
+      body.append(field("下一条分享的接收场景", scenario));
+      body.append(note("同一条已收过的分享会先提示重复。体验“资料不全”或“保存失败”时，请明确切到尚未收下这条示例的相册。"));
       const roles = node("div", "vibe-row");
       roles.append(button("回到自己", "vibe-secondary", () => setRole("owner")), button("朋友只读预览", "vibe-secondary", () => setRole("guest")));
       body.append(roles);
@@ -859,6 +877,7 @@
 
     api.setItems(clone(items()), { resetView: true });
     updateChrome();
+    if (new URLSearchParams(location.search).get("demo") === "source-douyin") openSourceDemo("抖音");
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot, { once: true });

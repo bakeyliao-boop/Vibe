@@ -599,7 +599,7 @@
     }
   </style>
 
-  <link rel="stylesheet" href="./lifecycle.css">
+  <link rel="stylesheet" href="./lifecycle.css?v=source-share-1">
   <section class="pso-phone" aria-label="iPhone共同内容池">
     <div class="pso-status"><span>9:41</span><span class="pso-status-icons"><i class="pso-signal"></i><i class="pso-wifi"></i><i class="pso-battery"></i></span></div>
     <header class="pso-header">
@@ -917,6 +917,7 @@
           number.className = "pso-result-number";
           number.textContent = String(items.findIndex((entry) => entry.id === item.id) + 1).padStart(2,"0");
           cover.append(number);
+          if (item.isFlowDemo) cover.append(Object.assign(document.createElement("span"),{className:"pso-flow-demo-label",textContent:"演示"}));
           const picked = document.createElement("span");
           picked.className = "pso-result-picked";
           picked.textContent = "已选";
@@ -930,7 +931,7 @@
           meta.textContent = item.sharer + " · " + item.date;
           const evidence = document.createElement("span");
           evidence.className = "pso-hit-line";
-          evidence.textContent = searchEvidence(result) || (item.platform || "小红书") + " · 查看原分享";
+          evidence.textContent = searchEvidence(result) || (item.platform || "小红书") + (item.isFlowDemo ? " · 查看分享演示" : " · 查看原分享");
           button.append(cover,title,meta,evidence);
           button.addEventListener("click",() => {
             findSelectedId = item.id;
@@ -1070,6 +1071,7 @@
         index.className = "pso-index";
         index.textContent = String(items.findIndex((entry) => entry.id === item.id) + 1).padStart(2,"0");
         slide.append(index);
+        if (item.isFlowDemo) slide.append(Object.assign(document.createElement("span"),{className:"pso-flow-demo-label",textContent:"演示"}));
         if (item.reply) {
           const reply = document.createElement("span");
           reply.className = "pso-reply";
@@ -1275,7 +1277,7 @@
         dockContext.textContent = result && result.hits.length ? searchEvidence(result) : item.context[mode];
         openLink.href = item.url;
         const sourcePlatform = item.platform || "小红书";
-        openLink.textContent = ["小红书","抖音","微信","微博"].includes(sourcePlatform) ? "打开" + sourcePlatform + "原内容 ↗" : "打开原网页 ↗";
+        openLink.textContent = item.isFlowDemo ? "查看分享演示 ↗" : ["小红书","抖音","微信","微博"].includes(sourcePlatform) ? "打开" + sourcePlatform + "原内容 ↗" : "打开原网页 ↗";
         window.dispatchEvent(new CustomEvent("vibe:selection",{detail:cloneItem(item)}));
       }
       function cancelAmbientDockUpdate() {
@@ -1509,7 +1511,7 @@
             types:Array.isArray(input.types) && input.types.length ? [...new Set(input.types.map(String))] : ["unknown"],
             cover:typeof input.cover === "string" && /^data:image\/(jpeg|png|webp);base64,/.test(input.cover) ? input.cover : null,
             context:{place:"地点信息待补充",type:"类型信息待补充",person:"分享来源待补充",...input.context},
-            platform:platformFor(input.url),url:input.url
+            platform:input.isFlowDemo && input.provenance?.kind === "source-share-demo" ? "抖音 · 演示" : platformFor(input.url),url:input.url
           };
         });
         const isNewPreferred = options.preferredId && !byId.has(options.preferredId);
@@ -1629,7 +1631,7 @@
       },9000);
     })();
   </script>
-  <script src="./lifecycle.js"></script>
+  <script src="./lifecycle.js?v=source-share-1"></script>
 </div>
 </body>
 </html>
