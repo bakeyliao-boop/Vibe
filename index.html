@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#eee9dd" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#10120f" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="data:,">
   <title>Vibe · 共同内容池 Mock</title>
   <style>
     html, body { margin: 0; min-height: 100%; background: #eee9dd; }
@@ -206,12 +207,12 @@
       background: transparent;
       text-align: left;
       transition:
-        left .48s cubic-bezier(.18,.82,.22,1),
-        top .48s cubic-bezier(.18,.82,.22,1),
-        width .48s cubic-bezier(.18,.82,.22,1),
+        left .82s cubic-bezier(.18,.82,.22,1),
+        top .82s cubic-bezier(.18,.82,.22,1),
+        width .82s cubic-bezier(.18,.82,.22,1),
         opacity .32s ease,
         filter .32s ease,
-        transform .48s cubic-bezier(.18,.82,.22,1);
+        transform .82s cubic-bezier(.18,.82,.22,1);
       -webkit-tap-highlight-color: transparent;
     }
     #pinned-source-orbit .pso-specimen:focus-visible { outline: 2px solid light-dark(#97672c,#efb85a); outline-offset: 3px; border-radius: 17px; }
@@ -226,8 +227,17 @@
       background: light-dark(rgba(234,219,189,.82), rgba(63,53,37,.86));
       box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 10px 21px light-dark(rgba(65,44,16,.16), rgba(0,0,0,.34));
       backdrop-filter: blur(5px) saturate(1.05);
+      transition: transform .82s cubic-bezier(.18,.82,.22,1), border-color .28s ease, box-shadow .28s ease;
     }
-    #pinned-source-orbit .pso-cover { width: 100%; height: 100%; display: block; object-fit: cover; filter: saturate(.9) contrast(.99); }
+    #pinned-source-orbit .pso-cover {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      filter: saturate(.9) contrast(.99);
+      transform: scale(1.015);
+      transform-origin: 48% 48%;
+    }
     #pinned-source-orbit .pso-fallback {
       position: absolute;
       inset: 0;
@@ -266,15 +276,58 @@
       line-height: 1.3;
       opacity: .72;
       text-shadow: 0 1px light-dark(rgba(255,255,255,.72),rgba(0,0,0,.5));
+      transition: opacity .28s ease, transform .48s cubic-bezier(.18,.82,.22,1);
     }
+    #pinned-source-orbit .pso-deck.is-dense .pso-item-name { opacity: 0; transform: translateY(4px); }
+    #pinned-source-orbit .pso-deck.is-dense .pso-specimen.is-memory-focus .pso-item-name,
+    #pinned-source-orbit .pso-deck.is-dense .pso-specimen.is-selected .pso-item-name { opacity: .76; transform: none; }
     #pinned-source-orbit .pso-specimen.is-hidden { opacity: .10; filter: grayscale(.5) saturate(.35); pointer-events: none; }
     #pinned-source-orbit .pso-specimen.is-active { z-index: 20; opacity: 1; filter: none; }
+    #pinned-source-orbit .pso-specimen.is-memory-focus { z-index: 25; }
+    #pinned-source-orbit .pso-specimen.is-memory-focus .pso-slide {
+      transform: translateY(-7px) scale(1.025);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 17px 29px light-dark(rgba(65,44,16,.22), rgba(0,0,0,.45));
+    }
+    #pinned-source-orbit .pso-specimen.is-memory-focus:not(.is-selected) .pso-cover {
+      animation: pso-memory-drift 7.2s cubic-bezier(.22,.61,.36,1) both;
+    }
+    #pinned-source-orbit .pso-specimen.is-memory-whisper { z-index: 23; }
+    #pinned-source-orbit .pso-specimen.is-memory-whisper .pso-slide {
+      transform: translateY(-5px) scale(1.018);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.44), 0 14px 24px light-dark(rgba(65,44,16,.19), rgba(0,0,0,.4));
+    }
+    #pinned-source-orbit .pso-specimen.is-memory-whisper .pso-cover {
+      animation: pso-memory-drift 6.4s cubic-bezier(.22,.61,.36,1) both;
+    }
     #pinned-source-orbit .pso-specimen.is-selected {
       z-index: 29;
       transform: translateY(-9px) scale(1.035) !important;
       filter: drop-shadow(0 12px 15px light-dark(rgba(169,101,28,.27),rgba(239,157,57,.18)));
     }
-    #pinned-source-orbit .pso-specimen.is-selected .pso-slide { border-color: light-dark(rgba(154,102,36,.54),rgba(244,181,83,.48)); box-shadow: inset 0 1px rgba(255,255,255,.45),0 13px 25px rgba(0,0,0,.24); }
+    #pinned-source-orbit .pso-specimen.is-selected .pso-slide { transform: translateY(-5px) scale(1.02); border-color: light-dark(rgba(154,102,36,.54),rgba(244,181,83,.48)); box-shadow: inset 0 1px rgba(255,255,255,.45),0 13px 25px rgba(0,0,0,.24); }
+    #pinned-source-orbit .pso-specimen.is-selected::after {
+      content: "已选";
+      position: absolute;
+      z-index: 8;
+      top: 7px;
+      right: 7px;
+      min-width: 31px;
+      height: 20px;
+      padding: 0 6px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      color: #fff8e8;
+      background: rgba(34,29,21,.72);
+      backdrop-filter: blur(8px);
+      font-size: 10px;
+      line-height: 1;
+    }
+    #pinned-source-orbit .pso-deck.is-paused .pso-cover { animation-play-state: paused !important; }
+    @keyframes pso-memory-drift {
+      from { transform: scale(1.018) translate3d(-.45%, -.3%, 0); }
+      to { transform: scale(1.052) translate3d(.45%, .3%, 0); }
+    }
     #pinned-source-orbit .pso-reply {
       position: absolute;
       z-index: 12;
@@ -449,7 +502,7 @@
       </section>
 
       <section class="pso-strip-wrap" aria-label="横滑切换关系组">
-        <div class="pso-strip-label">左右滑或点组名；选中的内容不会丢</div>
+        <div class="pso-strip-label">左右滑或点组名 · 封面会慢慢浮现</div>
         <div class="pso-strip"></div>
       </section>
 
@@ -459,10 +512,10 @@
           <div><div class="pso-dock-title"></div><div class="pso-dock-meta"></div></div>
         </div>
         <div class="pso-dock-context"></div>
-        <a class="pso-open-link" href="#" target="_blank" rel="noopener noreferrer">打开原内容 <span aria-hidden="true">↗</span></a>
+        <a class="pso-open-link" href="#" target="_blank" rel="noopener noreferrer">在小红书打开原内容 <span aria-hidden="true">↗</span></a>
         <div class="pso-link-state">可达性尚未验证 · 仍可尝试打开</div>
       </section>
-      <div class="pso-first-hint">点一张封面，随时回到原平台</div>
+      <div class="pso-first-hint">相册会慢慢换片 · 点一张就停住</div>
     </main>
   </section>
 
@@ -471,6 +524,7 @@
       const root = document.getElementById("pinned-source-orbit");
       const modeButtons = Array.from(root.querySelectorAll("[data-mode]"));
       const itemsRoot = root.querySelector(".pso-items");
+      const deck = root.querySelector(".pso-deck");
       const strip = root.querySelector(".pso-strip");
       const groupName = root.querySelector(".pso-group-name");
       const groupFact = root.querySelector(".pso-group-fact");
@@ -521,15 +575,17 @@
           {key:"missing",label:"出处缺失",ids:[12,13],fact:"2条没有分享者与群聊时间"}
         ]
       };
+      const primaryTypeById = new Map([
+        [4,"browse"],[5,"object"],[7,"browse"],[8,"action"],[11,"action"],[12,"unknown"],[13,"unknown"]
+      ]);
       const fanSlots = {
-        1:[{x:29,y:28,w:42,r:0}],
-        2:[{x:12,y:56,w:38,r:-6},{x:51,y:56,w:38,r:6}],
-        3:[{x:4,y:83,w:35,r:-6},{x:32,y:27,w:37,r:0},{x:62,y:83,w:34,r:6}],
-        4:[{x:2,y:62,w:30,r:-7},{x:23,y:25,w:31,r:-2},{x:48,y:25,w:31,r:2},{x:70,y:62,w:29,r:7}],
+        1:[{x:29,y:24,w:42,r:0}],
+        2:[{x:16,y:25,w:44,r:-2},{x:54,y:94,w:33,r:4}],
+        3:[{x:31,y:18,w:39,r:0},{x:5,y:100,w:32,r:-5},{x:66,y:105,w:30,r:5}],
+        4:[{x:31,y:16,w:38,r:0},{x:5,y:94,w:29,r:-5},{x:66,y:86,w:29,r:4},{x:39,y:202,w:25,r:1}],
         many:[
-          {x:3,y:25,w:23,r:-4},{x:27,y:16,w:23,r:-1},{x:51,y:16,w:23,r:1},{x:75,y:25,w:22,r:4},
-          {x:4,y:176,w:23,r:-3},{x:28,y:164,w:23,r:0},{x:52,y:164,w:23,r:0},{x:76,y:176,w:22,r:3},
-          {x:17,y:267,w:21,r:-2}
+          {x:34,y:8,w:32,r:0},{x:3,y:36,w:25,r:-4},{x:72,y:42,w:24,r:4},
+          {x:4,y:156,w:22,r:-3},{x:27,y:169,w:22,r:-1},{x:51,y:169,w:22,r:1},{x:75,y:156,w:21,r:3}
         ]
       };
       const hiddenSlots = [
@@ -539,8 +595,20 @@
 
       let mode = "place";
       let activeIndex = {place:0,type:0,person:0};
-      let selectedId = 8;
+      let selectedId = null;
+      let focusedId = 8;
+      let whisperedId = null;
       let hintShown = true;
+      let recentFocusedIds = [8];
+      const groupOrders = new Map();
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      let shuffleTimer = null;
+      let resumeTimer = null;
+      let hoverPaused = false;
+      let focusPaused = false;
+      let interactionPaused = false;
+      let stripScrollSuppressedUntil = 0;
+      let keyboardNavigation = false;
 
       function makeCover(item,className) {
         if (item.cover) {
@@ -593,7 +661,84 @@
       }
       function currentGroup() { return groups[mode][activeIndex[mode]]; }
       function groupContaining(id,targetMode) {
-        return groups[targetMode].findIndex((group) => group.ids.includes(id));
+        const matches = groups[targetMode]
+          .map((group,index) => ({group,index}))
+          .filter(({group}) => group.ids.includes(id));
+        if (!matches.length) return -1;
+        const primaryType = targetMode === "type" ? primaryTypeById.get(id) : null;
+        if (primaryType) {
+          const primary = matches.find(({group}) => group.key === primaryType);
+          if (primary) return primary.index;
+        }
+        if (targetMode === "type") matches.sort((a,b) => a.group.ids.length - b.group.ids.length);
+        return matches[0].index;
+      }
+      function groupOrder(group) {
+        const key = mode + ":" + group.key;
+        if (!groupOrders.has(key)) groupOrders.set(key,group.ids.slice());
+        return groupOrders.get(key);
+      }
+      function moveToFront(order,id) {
+        const index = order.indexOf(id);
+        if (index <= 0) return;
+        order.splice(index,1);
+        order.unshift(id);
+      }
+      function visibleFocusId() {
+        const group = currentGroup();
+        if (selectedId && group.ids.includes(selectedId)) return selectedId;
+        if (focusedId && group.ids.includes(focusedId)) return focusedId;
+        return group.ids[0];
+      }
+      function dockItemId() { return selectedId || visibleFocusId(); }
+      function cancelShuffle() {
+        window.clearTimeout(shuffleTimer);
+        shuffleTimer = null;
+      }
+      function canShuffle() {
+        return !reducedMotion.matches && !document.hidden && !hoverPaused && !focusPaused && !interactionPaused && currentGroup().ids.length > 1;
+      }
+      function shuffleDelay() { return 6000 + Math.round(Math.random() * 4000); }
+      function scheduleShuffle(delay = shuffleDelay()) {
+        cancelShuffle();
+        if (!canShuffle()) return;
+        shuffleTimer = window.setTimeout(shuffleOnce,delay);
+      }
+      function pauseTemporarily(milliseconds,revealOnResume = false) {
+        interactionPaused = true;
+        deck.classList.add("is-paused");
+        cancelShuffle();
+        window.clearTimeout(resumeTimer);
+        resumeTimer = window.setTimeout(() => {
+          interactionPaused = false;
+          if (!hoverPaused && !focusPaused) deck.classList.remove("is-paused");
+          if (revealOnResume && canShuffle()) shuffleOnce();
+          else scheduleShuffle();
+        },milliseconds);
+      }
+      function refreshStripSelection() {
+        strip.querySelectorAll("button").forEach((button,index) => {
+          button.setAttribute("aria-pressed",String(index === activeIndex[mode]));
+        });
+      }
+      function centerStripButton(button) {
+        stripScrollSuppressedUntil = performance.now() + 900;
+        button?.scrollIntoView({behavior:reducedMotion.matches ? "auto" : "smooth",inline:"center",block:"nearest"});
+      }
+      function activateGroup(index,shouldCenter = true) {
+        activeIndex[mode] = index;
+        const group = currentGroup();
+        if (selectedId && !group.ids.includes(selectedId)) selectedId = null;
+        whisperedId = null;
+        if (!group.ids.includes(focusedId)) focusedId = group.ids[0];
+        pauseTemporarily(1200);
+        refreshStripSelection();
+        renderDeck();
+        if (!selectedId) renderDock();
+        if (shouldCenter) {
+          const activeButton = strip.querySelectorAll("button")[index];
+          requestAnimationFrame(() => centerStripButton(activeButton));
+        }
       }
       function renderStrip() {
         strip.replaceChildren();
@@ -604,38 +749,52 @@
           button.setAttribute("aria-pressed",String(index === activeIndex[mode]));
           button.textContent = group.label + " · " + group.ids.length;
           button.addEventListener("click",() => {
-            activeIndex[mode] = index;
-            render();
-            requestAnimationFrame(() => button.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"}));
+            activateGroup(index);
           });
           strip.append(button);
         });
       }
       function renderDeck() {
         const group = currentGroup();
+        deck.classList.toggle("is-dense",group.ids.length >= 5);
         groupName.textContent = group.label + " · " + group.ids.length + "条";
         groupFact.textContent = group.fact;
         const groupSet = new Set(group.ids);
         const slots = group.ids.length >= 5 ? fanSlots.many : fanSlots[group.ids.length];
-        group.ids.forEach((id,index) => {
+        const order = groupOrder(group);
+        focusedId = visibleFocusId();
+        moveToFront(order,focusedId);
+        const visibleIds = order.slice(0,Math.min(slots.length,7));
+        const visibleSet = new Set(visibleIds);
+        visibleIds.forEach((id,index) => {
           const button = itemButtons.get(id);
           button.classList.remove("is-hidden");
           button.classList.add("is-active");
+          button.classList.toggle("is-memory-focus",id === focusedId);
+          button.classList.toggle("is-memory-whisper",id === whisperedId);
+          button.setAttribute("aria-hidden","false");
+          button.setAttribute("aria-pressed",String(id === selectedId));
+          button.tabIndex = 0;
           setPosition(button,slots[Math.min(index,slots.length-1)]);
         });
         let hiddenIndex = 0;
         items.forEach((item) => {
-          if (groupSet.has(item.id)) return;
+          if (visibleSet.has(item.id)) return;
           const button = itemButtons.get(item.id);
           button.classList.remove("is-active");
+          button.classList.remove("is-memory-focus");
+          button.classList.remove("is-memory-whisper");
           button.classList.add("is-hidden");
+          button.setAttribute("aria-hidden","true");
+          button.setAttribute("aria-pressed",String(item.id === selectedId));
+          button.tabIndex = -1;
           setPosition(button,hiddenSlots[hiddenIndex % hiddenSlots.length]);
           hiddenIndex += 1;
         });
-        itemButtons.forEach((button,id) => button.classList.toggle("is-selected",id === selectedId));
+        itemButtons.forEach((button,id) => button.classList.toggle("is-selected",id === selectedId && groupSet.has(id)));
       }
       function renderDock() {
-        const item = byId.get(selectedId);
+        const item = byId.get(dockItemId());
         dockThumb.replaceChildren();
         if (item.cover) {
           const image = document.createElement("img");
@@ -658,27 +817,78 @@
         renderDeck();
         renderDock();
         const activeStripButton = strip.querySelector('button[aria-pressed="true"]');
-        requestAnimationFrame(() => activeStripButton?.scrollIntoView({behavior:"smooth",inline:"center",block:"nearest"}));
+        requestAnimationFrame(() => centerStripButton(activeStripButton));
+        scheduleShuffle();
       }
       function selectItem(id) {
         selectedId = id;
+        focusedId = id;
+        moveToFront(groupOrder(currentGroup()),id);
+        pauseTemporarily(8000,true);
         if (hintShown) { firstHint.classList.add("is-gone"); hintShown = false; }
-        itemButtons.forEach((button,itemId) => button.classList.toggle("is-selected",itemId === id));
+        renderDeck();
         renderDock();
+      }
+      function shuffleOnce() {
+        if (!canShuffle()) return;
+        const group = currentGroup();
+        const order = groupOrder(group);
+        const selectedInGroup = selectedId && group.ids.includes(selectedId);
+        if (selectedInGroup) {
+          moveToFront(order,selectedId);
+          focusedId = selectedId;
+          if (order.length > 7) {
+            const visibleSide = 1 + Math.floor(Math.random() * 6);
+            const queued = 7 + Math.floor(Math.random() * (order.length - 7));
+            [order[visibleSide],order[queued]] = [order[queued],order[visibleSide]];
+            whisperedId = order[visibleSide];
+          } else {
+            const sideIds = order.slice(1);
+            whisperedId = sideIds[Math.floor(Math.random() * sideIds.length)];
+          }
+        } else {
+          const available = order
+            .map((id,index) => ({id,index}))
+            .slice(1)
+            .filter(({id}) => !recentFocusedIds.includes(id));
+          const candidates = available.length ? available : order.map((id,index) => ({id,index})).slice(1);
+          const nextIndex = candidates[Math.floor(Math.random() * candidates.length)].index;
+          [order[0],order[nextIndex]] = [order[nextIndex],order[0]];
+          focusedId = order[0];
+          recentFocusedIds = [focusedId,...recentFocusedIds].slice(0,2);
+          whisperedId = null;
+        }
+        renderDeck();
+        if (!selectedId) renderDock();
+        if (whisperedId) {
+          const currentWhisper = whisperedId;
+          window.setTimeout(() => {
+            if (whisperedId !== currentWhisper) return;
+            whisperedId = null;
+            renderDeck();
+          },1100);
+        }
+        scheduleShuffle();
       }
       modeButtons.forEach((button) => {
         button.addEventListener("click",() => {
           const nextMode = button.dataset.mode;
-          const containing = groupContaining(selectedId,nextMode);
+          const anchorId = selectedId || focusedId;
+          const containing = groupContaining(anchorId,nextMode);
           mode = nextMode;
           if (containing >= 0) activeIndex[mode] = containing;
+          focusedId = containing >= 0 ? anchorId : currentGroup().ids[0];
+          pauseTemporarily(1200);
           render();
         });
       });
       let settleTimer = null;
+      strip.addEventListener("pointerdown",() => pauseTemporarily(900),{passive:true});
       strip.addEventListener("scroll",() => {
+        pauseTemporarily(900);
         window.clearTimeout(settleTimer);
         settleTimer = window.setTimeout(() => {
+          if (performance.now() < stripScrollSuppressedUntil) return;
           const center = strip.getBoundingClientRect().left + strip.clientWidth / 2;
           const candidates = Array.from(strip.querySelectorAll("button"));
           let nearest = candidates[0];
@@ -690,12 +900,73 @@
           });
           const index = Number(nearest.dataset.groupIndex);
           if (index !== activeIndex[mode]) {
-            activeIndex[mode] = index;
-            render();
+            activateGroup(index,false);
           }
         },120);
       });
+      deck.addEventListener("pointerenter",(event) => {
+        if (event.pointerType !== "mouse") return;
+        hoverPaused = true;
+        deck.classList.add("is-paused");
+        cancelShuffle();
+      });
+      deck.addEventListener("pointerleave",(event) => {
+        if (event.pointerType !== "mouse") return;
+        hoverPaused = false;
+        if (!interactionPaused && !focusPaused) deck.classList.remove("is-paused");
+        scheduleShuffle();
+      });
+      document.addEventListener("keydown",(event) => {
+        if (event.key === "Tab") keyboardNavigation = true;
+      });
+      function syncKeyboardFocusPause() {
+        focusPaused = keyboardNavigation && (deck.contains(document.activeElement) || document.activeElement === openLink);
+        if (focusPaused) {
+          deck.classList.add("is-paused");
+          cancelShuffle();
+        } else {
+          if (!hoverPaused && !interactionPaused) deck.classList.remove("is-paused");
+          scheduleShuffle();
+        }
+      }
+      document.addEventListener("pointerdown",() => {
+        keyboardNavigation = false;
+        window.setTimeout(syncKeyboardFocusPause,0);
+      },{capture:true,passive:true});
+      deck.addEventListener("pointerdown",() => pauseTemporarily(8000,true),{passive:true});
+      deck.addEventListener("focusin",() => {
+        if (!keyboardNavigation) return;
+        focusPaused = true;
+        deck.classList.add("is-paused");
+        cancelShuffle();
+      });
+      deck.addEventListener("focusout",() => {
+        window.setTimeout(syncKeyboardFocusPause,0);
+      });
+      document.addEventListener("visibilitychange",() => {
+        if (document.hidden) cancelShuffle();
+        else scheduleShuffle(6000);
+      });
+      reducedMotion.addEventListener?.("change",() => {
+        if (reducedMotion.matches) cancelShuffle();
+        else scheduleShuffle(6000);
+      });
+      openLink.addEventListener("pointerdown",() => pauseTemporarily(10000),{passive:true});
+      openLink.addEventListener("focus",() => {
+        if (!keyboardNavigation) return;
+        focusPaused = true;
+        deck.classList.add("is-paused");
+        cancelShuffle();
+      });
+      openLink.addEventListener("blur",() => window.setTimeout(syncKeyboardFocusPause,0));
+      openLink.addEventListener("click",() => pauseTemporarily(10000));
       render();
+      scheduleShuffle(6000);
+      window.setTimeout(() => {
+        if (!hintShown) return;
+        firstHint.classList.add("is-gone");
+        hintShown = false;
+      },9000);
     })();
   </script>
 </div>
