@@ -215,6 +215,15 @@
         transform .82s cubic-bezier(.18,.82,.22,1);
       -webkit-tap-highlight-color: transparent;
     }
+    #pinned-source-orbit .pso-deck.is-ambient-transition .pso-specimen {
+      transition:
+        left 1.7s cubic-bezier(.38,0,.18,1),
+        top 1.7s cubic-bezier(.38,0,.18,1),
+        width 1.7s cubic-bezier(.38,0,.18,1),
+        opacity .9s ease-in-out,
+        filter .9s ease-in-out,
+        transform 1.7s cubic-bezier(.38,0,.18,1);
+    }
     #pinned-source-orbit .pso-specimen:focus-visible { outline: 2px solid light-dark(#97672c,#efb85a); outline-offset: 3px; border-radius: 17px; }
     #pinned-source-orbit .pso-slide {
       position: relative;
@@ -228,6 +237,9 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,.4), 0 10px 21px light-dark(rgba(65,44,16,.16), rgba(0,0,0,.34));
       backdrop-filter: blur(5px) saturate(1.05);
       transition: transform .82s cubic-bezier(.18,.82,.22,1), border-color .28s ease, box-shadow .28s ease;
+    }
+    #pinned-source-orbit .pso-deck.is-ambient-transition .pso-slide {
+      transition: transform 1.7s cubic-bezier(.38,0,.18,1), border-color .7s ease-in-out, box-shadow .7s ease-in-out;
     }
     #pinned-source-orbit .pso-cover {
       width: 100%;
@@ -281,6 +293,9 @@
     #pinned-source-orbit .pso-deck.is-dense .pso-item-name { opacity: 0; transform: translateY(4px); }
     #pinned-source-orbit .pso-deck.is-dense .pso-specimen.is-memory-focus .pso-item-name,
     #pinned-source-orbit .pso-deck.is-dense .pso-specimen.is-selected .pso-item-name { opacity: .76; transform: none; }
+    #pinned-source-orbit .pso-deck.is-ambient-transition .pso-item-name {
+      transition: opacity 1s ease-in-out, transform 1.35s cubic-bezier(.38,0,.18,1);
+    }
     #pinned-source-orbit .pso-specimen.is-hidden { opacity: .10; filter: grayscale(.5) saturate(.35); pointer-events: none; }
     #pinned-source-orbit .pso-specimen.is-active { z-index: 20; opacity: 1; filter: none; }
     #pinned-source-orbit .pso-specimen.is-memory-focus { z-index: 25; }
@@ -289,7 +304,7 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,.45), 0 17px 29px light-dark(rgba(65,44,16,.22), rgba(0,0,0,.45));
     }
     #pinned-source-orbit .pso-specimen.is-memory-focus:not(.is-selected) .pso-cover {
-      animation: pso-memory-drift 7.2s cubic-bezier(.22,.61,.36,1) both;
+      animation: pso-memory-drift 9.6s cubic-bezier(.22,.61,.36,1) both;
     }
     #pinned-source-orbit .pso-specimen.is-memory-whisper { z-index: 23; }
     #pinned-source-orbit .pso-specimen.is-memory-whisper .pso-slide {
@@ -297,7 +312,7 @@
       box-shadow: inset 0 1px 0 rgba(255,255,255,.44), 0 14px 24px light-dark(rgba(65,44,16,.19), rgba(0,0,0,.4));
     }
     #pinned-source-orbit .pso-specimen.is-memory-whisper .pso-cover {
-      animation: pso-memory-drift 6.4s cubic-bezier(.22,.61,.36,1) both;
+      animation: pso-memory-drift 8.8s cubic-bezier(.22,.61,.36,1) both;
     }
     #pinned-source-orbit .pso-specimen.is-selected {
       z-index: 29;
@@ -424,6 +439,10 @@
     #pinned-source-orbit .pso-dock-title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: ui-serif,"Songti SC",serif; font-size: 16px; line-height: 1.25; font-weight: 500; }
     #pinned-source-orbit .pso-dock-meta { margin-top: 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 11px; opacity: .55; }
     #pinned-source-orbit .pso-dock-context { height: 27px; padding-top: 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 11px; opacity: .61; }
+    #pinned-source-orbit .pso-dock-top,
+    #pinned-source-orbit .pso-dock-context { transition: opacity .5s ease-in-out, transform .5s cubic-bezier(.38,0,.18,1); }
+    #pinned-source-orbit .pso-source-dock.is-ambient-updating .pso-dock-top,
+    #pinned-source-orbit .pso-source-dock.is-ambient-updating .pso-dock-context { opacity: .16; transform: translateY(4px); }
     #pinned-source-orbit .pso-open-link {
       width: 100%;
       height: 50px;
@@ -532,6 +551,7 @@
       const dockTitle = root.querySelector(".pso-dock-title");
       const dockMeta = root.querySelector(".pso-dock-meta");
       const dockContext = root.querySelector(".pso-dock-context");
+      const sourceDock = root.querySelector(".pso-source-dock");
       const openLink = root.querySelector(".pso-open-link");
       const firstHint = root.querySelector(".pso-first-hint");
 
@@ -604,6 +624,8 @@
       const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
       let shuffleTimer = null;
       let resumeTimer = null;
+      let ambientTransitionTimer = null;
+      let dockTransitionTimer = null;
       let hoverPaused = false;
       let focusPaused = false;
       let interactionPaused = false;
@@ -695,10 +717,20 @@
         window.clearTimeout(shuffleTimer);
         shuffleTimer = null;
       }
+      function endAmbientTransition() {
+        window.clearTimeout(ambientTransitionTimer);
+        ambientTransitionTimer = null;
+        deck.classList.remove("is-ambient-transition");
+      }
+      function beginAmbientTransition() {
+        endAmbientTransition();
+        deck.classList.add("is-ambient-transition");
+        ambientTransitionTimer = window.setTimeout(endAmbientTransition,1900);
+      }
       function canShuffle() {
         return !reducedMotion.matches && !document.hidden && !hoverPaused && !focusPaused && !interactionPaused && currentGroup().ids.length > 1;
       }
-      function shuffleDelay() { return 6000 + Math.round(Math.random() * 4000); }
+      function shuffleDelay() { return 9000 + Math.round(Math.random() * 4000); }
       function scheduleShuffle(delay = shuffleDelay()) {
         cancelShuffle();
         if (!canShuffle()) return;
@@ -706,6 +738,8 @@
       }
       function pauseTemporarily(milliseconds,revealOnResume = false) {
         interactionPaused = true;
+        endAmbientTransition();
+        cancelAmbientDockUpdate();
         deck.classList.add("is-paused");
         cancelShuffle();
         window.clearTimeout(resumeTimer);
@@ -793,7 +827,7 @@
         });
         itemButtons.forEach((button,id) => button.classList.toggle("is-selected",id === selectedId && groupSet.has(id)));
       }
-      function renderDock() {
+      function paintDock() {
         const item = byId.get(dockItemId());
         dockThumb.replaceChildren();
         if (item.cover) {
@@ -810,6 +844,24 @@
         dockMeta.textContent = "小红书 · " + item.date + " · " + item.sharer;
         dockContext.textContent = item.context[mode];
         openLink.href = item.url;
+      }
+      function cancelAmbientDockUpdate() {
+        window.clearTimeout(dockTransitionTimer);
+        dockTransitionTimer = null;
+        sourceDock.classList.remove("is-ambient-updating");
+      }
+      function renderDock() {
+        cancelAmbientDockUpdate();
+        paintDock();
+      }
+      function transitionDockToFocus() {
+        window.clearTimeout(dockTransitionTimer);
+        sourceDock.classList.add("is-ambient-updating");
+        dockTransitionTimer = window.setTimeout(() => {
+          dockTransitionTimer = null;
+          paintDock();
+          requestAnimationFrame(() => sourceDock.classList.remove("is-ambient-updating"));
+        },620);
       }
       function render() {
         modeButtons.forEach((button) => button.setAttribute("aria-pressed",String(button.dataset.mode === mode)));
@@ -831,6 +883,7 @@
       }
       function shuffleOnce() {
         if (!canShuffle()) return;
+        beginAmbientTransition();
         const group = currentGroup();
         const order = groupOrder(group);
         const selectedInGroup = selectedId && group.ids.includes(selectedId);
@@ -859,14 +912,14 @@
           whisperedId = null;
         }
         renderDeck();
-        if (!selectedId) renderDock();
+        if (!selectedId) transitionDockToFocus();
         if (whisperedId) {
           const currentWhisper = whisperedId;
           window.setTimeout(() => {
             if (whisperedId !== currentWhisper) return;
             whisperedId = null;
             renderDeck();
-          },1100);
+          },1900);
         }
         scheduleShuffle();
       }
@@ -945,11 +998,11 @@
       });
       document.addEventListener("visibilitychange",() => {
         if (document.hidden) cancelShuffle();
-        else scheduleShuffle(6000);
+        else scheduleShuffle();
       });
       reducedMotion.addEventListener?.("change",() => {
         if (reducedMotion.matches) cancelShuffle();
-        else scheduleShuffle(6000);
+        else scheduleShuffle();
       });
       openLink.addEventListener("pointerdown",() => pauseTemporarily(10000),{passive:true});
       openLink.addEventListener("focus",() => {
@@ -961,7 +1014,7 @@
       openLink.addEventListener("blur",() => window.setTimeout(syncKeyboardFocusPause,0));
       openLink.addEventListener("click",() => pauseTemporarily(10000));
       render();
-      scheduleShuffle(6000);
+      scheduleShuffle(7000);
       window.setTimeout(() => {
         if (!hintShown) return;
         firstHint.classList.add("is-gone");
